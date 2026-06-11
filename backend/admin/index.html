@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Daily Yolk — Stock Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --shell: #FBF6EC; --shell-deep: #F3EADA; --ink: #2B2118; --ink-soft: #6B5B4C;
+    --yolk: #F0A529; --yolk-deep: #D88A0E; --hen: #3E5A3E; --brown: #9A6A45;
+    --quail: #C9B8A3; --paid: #2E7D4F; --low: #A23E2A;
+    --radius: 16px; --shadow: 0 10px 28px rgba(43,33,24,.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Karla', system-ui, sans-serif; background: var(--shell); color: var(--ink); line-height: 1.5; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+  h1 { font-family: 'Fraunces', Georgia, serif; font-size: 1.7rem; font-weight: 700; }
+  .sub { color: var(--ink-soft); margin-bottom: 28px; }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .85rem;
+          background: #fff; border: 1.5px solid rgba(43,33,24,.15); border-radius: 999px; padding: 7px 14px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #B4B2A9; }
+  .dot.on { background: var(--paid); box-shadow: 0 0 0 4px rgba(46,125,79,.18); }
+
+  h2 { font-family: 'Fraunces', Georgia, serif; font-size: 1.15rem; margin: 34px 0 14px; }
+  .card { background: #fff; border: 1px solid rgba(43,33,24,.08); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .row { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px dashed rgba(43,33,24,.12); flex-wrap: wrap; }
+  .row:last-child { border-bottom: none; }
+  .egg { width: 22px; height: 28px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; flex-shrink: 0; }
+  .egg.brown { background: var(--brown); }
+  .egg.quail { background: var(--quail); border: 1px solid var(--brown); }
+  .info { flex: 1; min-width: 180px; }
+  .name { font-weight: 700; }
+  .meta { font-size: .82rem; color: var(--ink-soft); }
+  .stock-pill { font-weight: 700; font-size: .85rem; border-radius: 999px; padding: 5px 12px; background: var(--shell-deep); min-width: 96px; text-align: center; }
+  .stock-pill.low { background: #FAECE7; color: var(--low); }
+  .stock-pill.out { background: var(--low); color: #fff; }
+  .controls { display: flex; align-items: center; gap: 8px; }
+  .controls button {
+    width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--ink);
+    background: #fff; font-size: 1.1rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .controls button:hover { background: var(--ink); color: var(--shell); }
+  .controls input {
+    width: 70px; text-align: center; padding: 8px 6px; border-radius: 10px;
+    border: 1.5px solid rgba(43,33,24,.2); font-family: inherit; font-size: 1rem; font-weight: 700;
+  }
+  .set-btn {
+    border: none; background: var(--yolk); color: var(--ink); font-weight: 700; cursor: pointer;
+    border-radius: 999px; padding: 9px 18px; font-family: inherit; box-shadow: 0 3px 0 var(--yolk-deep);
+  }
+  .set-btn:hover { transform: translateY(1px); box-shadow: 0 2px 0 var(--yolk-deep); }
+  .orders .row { font-size: .92rem; }
+  .orders .amount { font-weight: 700; margin-left: auto; }
+  .empty { padding: 26px 20px; color: var(--ink-soft); text-align: center; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: var(--shell); padding: 12px 22px; border-radius: 999px;
+    font-weight: 700; font-size: .9rem; transition: transform .25s ease; box-shadow: var(--shadow);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.err { background: var(--low); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Stock manager</h1>
+    <span class="live"><span class="dot" id="liveDot"></span><span id="liveText">Connecting…</span></span>
+  </header>
+  <p class="sub">Change a number here and the website updates instantly for every visitor.</p>
+
+  <h2>Today's stock</h2>
+  <div class="card" id="productList"><div class="empty">Loading products…</div></div>
+
+  <h2>Paid orders</h2>
+  <div class="card orders" id="orderList"><div class="empty">No paid orders yet — they'll appear here live.</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let products = [];
+
+const fmt = (paise) => '₹' + (paise / 100);
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => (t.className = 'toast'), 2200);
+}
+
+function pillClass(stock) {
+  if (stock === 0) return 'stock-pill out';
+  if (stock < 10) return 'stock-pill low';
+  return 'stock-pill';
+}
+function pillText(stock) {
+  if (stock === 0) return 'Out of stock';
+  return stock + ' in stock';
+}
+
+function render() {
+  const list = document.getElementById('productList');
+  list.innerHTML = '';
+  for (const p of products) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <span class="egg ${p.category}"></span>
+      <div class="info">
+        <div class="name">${p.name}</div>
+        <div class="meta">Pack of ${p.packSize} · ${fmt(p.pricePaise)}</div>
+      </div>
+      <span class="${pillClass(p.stock)}" data-pill="${p.id}">${pillText(p.stock)}</span>
+      <div class="controls">
+        <button aria-label="Decrease" data-step="-1" data-id="${p.id}">−</button>
+        <input type="number" min="0" value="${p.stock}" data-input="${p.id}" aria-label="Stock for ${p.name} pack of ${p.packSize}">
+        <button aria-label="Increase" data-step="1" data-id="${p.id}">+</button>
+        <button class="set-btn" data-save="${p.id}" style="width:auto;height:auto;border-radius:999px;">Save</button>
+      </div>`;
+    list.appendChild(row);
+  }
+}
+
+async function saveStock(id, value) {
+  try {
+    const res = await fetch(`${API}/products/${id}/stock`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stock: value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Update failed');
+    toast('Saved — website updated');
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+document.getElementById('productList').addEventListener('click', (e) => {
+  const stepBtn = e.target.closest('[data-step]');
+  if (stepBtn) {
+    const input = document.querySelector(`[data-input="${stepBtn.dataset.id}"]`);
+    input.value = Math.max(0, (parseInt(input.value, 10) || 0) + parseInt(stepBtn.dataset.step, 10));
+    saveStock(stepBtn.dataset.id, parseInt(input.value, 10));
+    return;
+  }
+  const saveBtn = e.target.closest('[data-save]');
+  if (saveBtn) {
+    const input = document.querySelector(`[data-input="${saveBtn.dataset.save}"]`);
+    const value = parseInt(input.value, 10);
+    if (!Number.isInteger(value) || value < 0) return toast('Enter a whole number, 0 or more', true);
+    saveStock(saveBtn.dataset.save, value);
+  }
+});
+
+function applyStockChanges(changes) {
+  for (const { id, stock } of changes) {
+    const p = products.find((x) => x.id === id);
+    if (p) p.stock = stock;
+    const pill = document.querySelector(`[data-pill="${id}"]`);
+    const input = document.querySelector(`[data-input="${id}"]`);
+    if (pill) { pill.className = pillClass(stock); pill.textContent = pillText(stock); }
+    if (input && document.activeElement !== input) input.value = stock;
+  }
+}
+
+function addOrderRow(order) {
+  const list = document.getElementById('orderList');
+  const emptyMsg = list.querySelector('.empty');
+  if (emptyMsg) emptyMsg.remove();
+  const row = document.createElement('div');
+  row.className = 'row';
+  const when = new Date(order.paidAt || Date.now()).toLocaleTimeString();
+  const items = (order.lineItems || []).map((i) => `${i.quantity} × ${i.name}`).join(', ');
+  row.innerHTML = `
+    <div class="info">
+      <div class="name">${order.customer?.name || 'Customer'}</div>
+      <div class="meta">${items || order.orderId} · ${when}</div>
+    </div>
+    <span class="amount">${fmt(order.amount)}</span>`;
+  list.prepend(row);
+}
+
+// --- The "sub" half of pub-sub: live updates from the server ---
+function connectEvents() {
+  const src = new EventSource(`${API}/events`);
+  src.onopen = () => {
+    document.getElementById('liveDot').className = 'dot on';
+    document.getElementById('liveText').textContent = 'Live';
+  };
+  src.onerror = () => {
+    document.getElementById('liveDot').className = 'dot';
+    document.getElementById('liveText').textContent = 'Reconnecting…';
+  };
+  src.addEventListener('stock', (e) => applyStockChanges(JSON.parse(e.data)));
+  src.addEventListener('order-paid', async (e) => {
+    const { orderId } = JSON.parse(e.data);
+    try {
+      const res = await fetch(`${API}/orders/${orderId}`);
+      const { order } = await res.json();
+      addOrderRow(order);
+      toast('New order paid 🎉');
+    } catch { /* order list is a convenience; ignore fetch hiccups */ }
+  });
+}
+
+async function init() {
+  const res = await fetch(`${API}/products`);
+  products = (await res.json()).products;
+  render();
+
+  const ordersRes = await fetch(`${API}/orders`);
+  const { orders } = await ordersRes.json();
+  orders.filter((o) => o.status === 'paid').reverse().forEach(addOrderRow);
+
+  connectEvents();
+}
+init();
+</script>
+</body>
+</html>

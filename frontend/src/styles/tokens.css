@@ -1,0 +1,25 @@
+/* Design tokens — change the brand in one place. */
+:root {
+  /* Palette */
+  --shell: #FBF6EC;        /* eggshell page background */
+  --shell-deep: #F3EADA;   /* card / section background */
+  --ink: #2B2118;          /* deep brown text */
+  --ink-soft: #6B5B4C;     /* secondary text */
+  --yolk: #F0A529;         /* golden yolk accent */
+  --yolk-deep: #D88A0E;
+  --hen: #3E5A3E;          /* coop green */
+  --brown: #9A6A45;        /* brown egg */
+  --quail: #C9B8A3;        /* quail shell */
+  --speckle: #5C4632;      /* speckle dots */
+  --paid: #2E7D4F;
+
+  /* Type */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Karla', system-ui, sans-serif;
+
+  /* Rhythm */
+  --radius-egg: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  --radius: 18px;
+  --shadow: 0 14px 34px rgba(43, 33, 24, 0.10);
+  --maxw: 1120px;
+}
