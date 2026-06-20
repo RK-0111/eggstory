@@ -47,6 +47,7 @@ export function calculateOrderAmount(items) {
 
   let totalPaise = 0;
   const lineItems = [];
+  const eggsByCategory = new Map();
 
   for (const item of items) {
     const product = getProductById(item.productId);
@@ -63,21 +64,30 @@ export function calculateOrderAmount(items) {
       throw err;
     }
 
-    if (typeof product.stock === 'number' && quantity > product.stock) {
-      const err = new Error(
-        `Only ${product.stock} packs of ${product.name} (${product.packSize}) left in stock`
-      );
-      err.status = 400;
-      throw err;
-    }
+    const eggsNeeded = product.packSize * quantity;
+    eggsByCategory.set(product.category, (eggsByCategory.get(product.category) || 0) + eggsNeeded);
 
     totalPaise += product.pricePaise * quantity;
     lineItems.push({
       productId: product.id,
       name: `${product.name} (pack of ${product.packSize})`,
       quantity,
+      eggs: eggsNeeded,
       unitPricePaise: product.pricePaise,
     });
+  }
+
+  for (const [category, eggsNeeded] of eggsByCategory) {
+    const product = lineItems
+      .map((item) => getProductById(item.productId))
+      .find((item) => item?.category === category);
+    if (product && typeof product.stock === 'number' && eggsNeeded > product.stock) {
+      const err = new Error(
+        `Only ${product.stock} ${category} eggs available`
+      );
+      err.status = 400;
+      throw err;
+    }
   }
 
   return { totalPaise, lineItems };

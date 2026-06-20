@@ -23,20 +23,23 @@ export default function CartDrawer() {
     customer.phone.trim().length >= 10 &&
     status !== 'paying';
 
+  const getAvailablePacks = (product) =>
+    typeof product.stock === 'number' ? Math.floor(product.stock / product.packSize) : Infinity;
+
   const handlePay = async () => {
     setError('');
     setStatus('paying');
     try {
-      // 1. Backend creates a Razorpay order (recalculates total server-side)
+      // 1. Backend creates a Razorpay order and recalculates total server-side.
       const order = await createPaymentOrder(
         items.map((i) => ({ productId: i.product.id, quantity: i.quantity })),
         customer
       );
 
-      // 2. Razorpay Checkout opens in the browser
+      // 2. Razorpay Checkout opens in the browser.
       const paymentResponse = await openCheckout(order, customer);
 
-      // 3. Backend verifies the signature before we trust the payment
+      // 3. Backend verifies the signature before we trust the payment.
       const result = await verifyPayment(paymentResponse);
       if (!result.verified) throw new Error('Payment could not be verified');
 
@@ -59,13 +62,13 @@ export default function CartDrawer() {
       <aside className="drawer" role="dialog" aria-label="Shopping cart">
         <div className="drawer-head">
           <h2>{status === 'success' ? 'Order confirmed' : 'Your basket'}</h2>
-          <button className="close-btn" onClick={handleClose} aria-label="Close cart">×</button>
+          <button className="close-btn" onClick={handleClose} aria-label="Close cart">x</button>
         </div>
 
         <div className="drawer-body">
           {status === 'success' ? (
             <div className="pay-success">
-              <div className="tick">✓</div>
+              <div className="tick">OK</div>
               <h3 style={{ fontFamily: 'var(--font-display)' }}>Payment received!</h3>
               <p style={{ color: 'var(--ink-soft)', marginTop: 8 }}>
                 Your eggs are being packed. We&apos;ll reach out on the phone
@@ -73,38 +76,42 @@ export default function CartDrawer() {
               </p>
             </div>
           ) : items.length === 0 ? (
-            <p className="cart-empty">Your basket is empty — go pick a pack!</p>
+            <p className="cart-empty">Your basket is empty - go pick a pack!</p>
           ) : (
-            items.map(({ product, quantity }) => (
-              <div className="cart-item" key={product.id}>
-                <div>
-                  <div className="cart-item-name">
-                    {product.name} · {product.packSize}
+            items.map(({ product, quantity }) => {
+              const availablePacks = getAvailablePacks(product);
+              return (
+                <div className="cart-item" key={product.id}>
+                  <div>
+                    <div className="cart-item-name">
+                      {product.name} - pack of {product.packSize}
+                    </div>
+                    <div className="cart-item-meta">
+                      {formatRupees(product.pricePaise)} each
+                    </div>
+                    <button className="remove-link" onClick={() => removeItem(product.id)}>
+                      Remove
+                    </button>
                   </div>
-                  <div className="cart-item-meta">
-                    {formatRupees(product.pricePaise)} each
+                  <div className="qty-controls">
+                    <button
+                      onClick={() => setQuantity(product.id, quantity - 1)}
+                      aria-label="Decrease quantity"
+                    >
+                      -
+                    </button>
+                    <span>{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(product.id, Math.min(quantity + 1, availablePacks))}
+                      aria-label="Increase quantity"
+                      disabled={quantity >= availablePacks}
+                    >
+                      +
+                    </button>
                   </div>
-                  <button className="remove-link" onClick={() => removeItem(product.id)}>
-                    Remove
-                  </button>
                 </div>
-                <div className="qty-controls">
-                  <button
-                    onClick={() => setQuantity(product.id, quantity - 1)}
-                    aria-label="Decrease quantity"
-                  >
-                    −
-                  </button>
-                  <span>{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(product.id, quantity + 1)}
-                    aria-label="Increase quantity"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -137,7 +144,7 @@ export default function CartDrawer() {
               />
             </div>
             <button className="pay-btn" disabled={!canPay} onClick={handlePay}>
-              {status === 'paying' ? 'Opening secure checkout…' : `Pay ${formatRupees(totalPaise)}`}
+              {status === 'paying' ? 'Opening secure checkout...' : `Pay ${formatRupees(totalPaise)}`}
             </button>
             {error && <p className="pay-error">{error}</p>}
           </div>

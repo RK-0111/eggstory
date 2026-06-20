@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CartProvider } from './context/CartContext.jsx';
+import { CartProvider, useCart } from './context/CartContext.jsx';
 import { fetchProducts } from './api/products.js';
 import { useStockStream } from './hooks/useStockStream.js';
 import Navbar from './components/Navbar.jsx';
@@ -8,6 +8,16 @@ import ProductSection from './components/ProductSection.jsx';
 import StoryStrip from './components/StoryStrip.jsx';
 import CartDrawer from './components/CartDrawer.jsx';
 import Footer from './components/Footer.jsx';
+
+function CartStockSync({ products }) {
+  const { syncProducts } = useCart();
+
+  useEffect(() => {
+    syncProducts(products);
+  }, [products]);
+
+  return null;
+}
 
 /**
  * The page is composed of independent sections. To add a new module
@@ -40,6 +50,7 @@ export default function App() {
 
   return (
     <CartProvider>
+      <CartStockSync products={products} />
       <Navbar />
       <main>
         <Hero />

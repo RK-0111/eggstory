@@ -26,7 +26,7 @@ export const products = [
   },
   {
     id: 'brown-12',
-    stock: 80,
+    stock: 100,
     category: 'brown',
     name: 'Free Range Brown Eggs',
     packSize: 12,
@@ -36,7 +36,7 @@ export const products = [
   },
   {
     id: 'brown-24',
-    stock: 50,
+    stock: 100,
     category: 'brown',
     name: 'Free Range Brown Eggs',
     packSize: 24,
@@ -46,7 +46,7 @@ export const products = [
   },
   {
     id: 'brown-30',
-    stock: 40,
+    stock: 100,
     category: 'brown',
     name: 'Free Range Brown Eggs',
     packSize: 30,

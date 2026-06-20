@@ -31,6 +31,14 @@ function cartReducer(state, action) {
     }
     case 'REMOVE':
       return { ...state, items: state.items.filter((i) => i.product.id !== action.productId) };
+    case 'SYNC_PRODUCTS': {
+      const productsById = new Map(action.products.map((product) => [product.id, product]));
+      const items = state.items.map((item) => {
+        const latestProduct = productsById.get(item.product.id);
+        return latestProduct ? { ...item, product: latestProduct } : item;
+      });
+      return { ...state, items };
+    }
     case 'CLEAR':
       return { ...state, items: [] };
     case 'OPEN':
@@ -59,6 +67,7 @@ export function CartProvider({ children }) {
       addItem: (product) => dispatch({ type: 'ADD', product }),
       setQuantity: (productId, quantity) => dispatch({ type: 'SET_QTY', productId, quantity }),
       removeItem: (productId) => dispatch({ type: 'REMOVE', productId }),
+      syncProducts: (products) => dispatch({ type: 'SYNC_PRODUCTS', products }),
       clearCart: () => dispatch({ type: 'CLEAR' }),
       openCart: () => dispatch({ type: 'OPEN' }),
       closeCart: () => dispatch({ type: 'CLOSE' }),

@@ -8,8 +8,12 @@ export default function ProductCard({ product }) {
   const [added, setAdded] = useState(false);
 
   const perEgg = (product.pricePaise / product.packSize / 100).toFixed(1);
+  const availablePacks =
+    typeof product.stock === 'number' ? Math.floor(product.stock / product.packSize) : Infinity;
+  const isOutOfStock = availablePacks < 1;
 
   const handleAdd = () => {
+    if (isOutOfStock) return;
     addItem(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
@@ -25,17 +29,17 @@ export default function ProductCard({ product }) {
       <p className="tagline">{product.tagline}</p>
       <div className="price-row">
         <span className="price">{formatRupees(product.pricePaise)}</span>
-        <span className="per-egg">₹{perEgg} / egg</span>
+        <span className="per-egg">Rs {perEgg} / egg</span>
       </div>
-      {typeof product.stock === 'number' && product.stock > 0 && product.stock < 10 && (
-        <span className="stock-note">Only {product.stock} left today</span>
+      {typeof product.stock === 'number' && product.stock > 0 && product.stock < product.packSize * 3 && (
+        <span className="stock-note">Only {product.stock} eggs left today</span>
       )}
       <button
         className={`add-btn ${added ? 'added' : ''}`}
         onClick={handleAdd}
-        disabled={product.stock === 0}
+        disabled={isOutOfStock}
       >
-        {product.stock === 0 ? 'Out of stock' : added ? 'Added to cart ✓' : 'Add to cart'}
+        {isOutOfStock ? 'Out of stock' : added ? 'Added to cart' : 'Add to cart'}
       </button>
     </article>
   );

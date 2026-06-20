@@ -11,11 +11,11 @@ export const getProduct = asyncHandler(async (req, res) => {
   res.json({ product });
 });
 
-/** PATCH /api/products/:id/stock — owner updates stock from the admin app. */
+/** PATCH /api/products/:id/stock - owner updates available egg count. */
 export const updateStock = asyncHandler(async (req, res) => {
   const stock = Number.parseInt(req.body.stock, 10);
   if (!Number.isInteger(stock) || stock < 0) {
-    return res.status(400).json({ error: 'stock must be a whole number, 0 or more' });
+    return res.status(400).json({ error: 'stock must be a whole egg count, 0 or more' });
   }
   const product = productsService.setStock(req.params.id, stock);
   if (!product) return res.status(404).json({ error: 'Product not found' });

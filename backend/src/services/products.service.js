@@ -16,24 +16,35 @@ export function getProductById(id) {
   return products.find((p) => p.id === id) || null;
 }
 
-/** Owner sets an absolute stock number from the admin app. */
+/** Owner sets an absolute egg count from the admin app. */
 export function setStock(id, stock) {
   const product = getProductById(id);
   if (!product) return null;
-  product.stock = stock;
-  publish('stock.updated', [{ id: product.id, stock: product.stock }]);
+  const matchingProducts = products.filter((p) => p.category === product.category);
+  for (const item of matchingProducts) item.stock = stock;
+  publish('stock.updated', matchingProducts.map((item) => ({ id: item.id, stock: item.stock })));
   return product;
 }
 
 /** Called after a successful payment. Publishes one event for all items. */
 export function reduceStockBulk(items) {
   const changes = [];
+  const eggsByCategory = new Map();
+
   for (const { productId, quantity } of items) {
     const product = getProductById(productId);
     if (!product) continue;
-    product.stock = Math.max(0, product.stock - quantity);
-    changes.push({ id: product.id, stock: product.stock });
+    const eggs = product.packSize * quantity;
+    eggsByCategory.set(product.category, (eggsByCategory.get(product.category) || 0) + eggs);
   }
+
+  for (const [category, eggs] of eggsByCategory) {
+    for (const product of products.filter((p) => p.category === category)) {
+      product.stock = Math.max(0, product.stock - eggs);
+      changes.push({ id: product.id, stock: product.stock });
+    }
+  }
+
   if (changes.length) publish('stock.updated', changes);
 }
 
