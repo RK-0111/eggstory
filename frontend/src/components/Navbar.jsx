@@ -7,7 +7,7 @@ export default function Navbar() {
       <div className="navbar-inner">
         <a href="#top" className="brand">
           <span className="brand-egg" aria-hidden="true" />
-          The Daily Yolk
+          The egg story
         </a>
         <nav className="nav-links" aria-label="Main">
           <a href="#brown-eggs">Brown eggs</a>
