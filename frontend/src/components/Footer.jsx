@@ -6,7 +6,7 @@ export default function Footer() {
           <span className="brand-egg" aria-hidden="true" />
           The Egg Story
         </a>
-        <p>Fresh from our farm to your kitchen. · hello@thedailyyolk.in</p>
+        <p>Fresh from our farm to your kitchen. · hello@theeggstory.com</p>
       </div>
     </footer>
   );
