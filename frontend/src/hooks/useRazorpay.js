@@ -36,7 +36,7 @@ export function useRazorpay() {
         amount: order.amount,
         currency: order.currency,
         order_id: order.orderId,
-        name: 'The Daily Yolk',
+        name: 'The Egg Story',
         description: 'Farm fresh eggs',
         prefill: {
           name: customer.name,

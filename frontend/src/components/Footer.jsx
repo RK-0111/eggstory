@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="container footer-inner">
         <a href="#top" className="brand">
           <span className="brand-egg" aria-hidden="true" />
-          The Daily Yolk
+          The Egg Story
         </a>
         <p>Fresh from our farm to your kitchen. · hello@thedailyyolk.in</p>
       </div>
