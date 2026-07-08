@@ -13,10 +13,12 @@ app.use(express.json());
 
 app.use('/api', apiRoutes);
 
+import { adminAuth } from './middleware/auth.js';
+
 // The owner's admin app — a single page served by this same server.
 // Open http://localhost:5000/admin while the backend is running.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use('/admin', express.static(path.join(__dirname, '../admin')));
+app.use('/admin', adminAuth, express.static(path.join(__dirname, '../admin')));
 
 app.use(notFound);
 app.use(errorHandler);
